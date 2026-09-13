@@ -30,8 +30,8 @@ task.spawn(function()
 end)
 
 local Window = Library:CreateWindow({
-    Title = "Steal An Egg",
-    Footer = "Obsidian HUB | FREE",
+    Title = "TITANIC HUB",
+    Footer = "Steal an Egg | FREEMIUM",
     Center = true,
     AutoShow = true,
     Resizable = true,
@@ -2349,16 +2349,16 @@ InfoGroup:AddLabel("Username: " .. LP.Name)
 InfoGroup:AddLabel("Display Name: " .. LP.DisplayName)
 InfoGroup:AddLabel("User ID: " .. tostring(LP.UserId))
 InfoGroup:AddLabel("Executor: " .. tostring(executorName))
-InfoGroup:AddLabel('Script Type: <font color="#FF0000">Free</font>', false)
+InfoGroup:AddLabel('Script Type: <font color="#FF0000">Freemium</font>', false)
 
 LinksGroup:AddButton({
     Text = "Join Discord",
     Func = function()
-        setclipboard("https://discord.gg/yourserver")
+        setclipboard("https://discord.com/invite/8CVAGERzNy")
         Notify("Discord", "Invite link copied!", "Success")
     end,
 })
-LinksGroup:AddLabel("discord.gg/yourserver")
+
 
 -- -----------------------------------------------------------------------------
 -- EGGS TAB
