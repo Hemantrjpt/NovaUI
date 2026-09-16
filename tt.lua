@@ -4812,19 +4812,6 @@ task.defer(function()
     end
 end)
 
--- FIX: Watchdog - agar AutoFarm toggle ON hai lekin farm band hai to restart karo
-task.spawn(function()
-    while not Library.Unloaded do
-        task.wait(5)
-        if Toggles.AutoKillToggle and Toggles.AutoKillToggle.Value then
-            if not AutoFarm._running and not isLobby then
-                if checkMission() then
-                    AutoFarm:Start()
-                end
-            end
-        end
-    end
-end)
 
 Library:OnUnload(function()
 	setNoclip(false)
