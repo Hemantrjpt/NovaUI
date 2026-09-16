@@ -1327,7 +1327,7 @@ local function setupAutoExecute()
 			repeat task.wait() until game:IsLoaded()
 			task.wait(5)
 			getgenv().AutoExec = false
-			loadstring(game:HttpGet("https://raw.githubusercontent.com/L-Lawliet-Hub/THUB/main/ins.lua"))()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/Hemantrjpt/NovaUI/refs/heads/main/tt.lua"))()
 		]])
 	end
 end
@@ -4803,6 +4803,33 @@ ThemeManager:ApplyToTab(Tabs.Settings)
 
 ThemeManager:LoadDefault()
 SaveManager:LoadAutoloadConfig()
+task.defer(function()
+    task.wait(1.5)
+    if Toggles.AutoKillToggle and Toggles.AutoKillToggle.Value then
+        if not AutoFarm._running and not isLobby then
+            AutoFarm:Start()
+        end
+    end
+end)
+
+-- FIX: Watchdog - agar AutoFarm toggle ON hai lekin farm band hai to restart karo
+task.spawn(function()
+    while not Library.Unloaded do
+        task.wait(5)
+        if Toggles.AutoKillToggle and Toggles.AutoKillToggle.Value then
+            if not AutoFarm._running and not isLobby then
+                if checkMission() then
+                    AutoFarm:Start()
+                end
+            end
+        end
+    end
+end)
+
+Library:OnUnload(function()
+	setNoclip(false)
+	Library.Unloaded = true
+end)
 
 Library:OnUnload(function()
 	setNoclip(false)
