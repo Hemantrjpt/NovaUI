@@ -1342,11 +1342,13 @@ function NovaUI:CreateToggle(opts)
 		})
 	end
 
-	local switchBg = Create("Frame", {
+	local switchBg = Create("TextButton", {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -10, 0.5, 0),
 		Size = UDim2.new(0, 38, 0, 20),
 		BackgroundColor3 = state and theme.Accent or theme.Sidebar,
+		Text = "",
+		AutoButtonColor = false,
 		Parent = holder,
 	}, {Corner(10)})
 
@@ -1365,10 +1367,8 @@ function NovaUI:CreateToggle(opts)
 		if fire and opts.Callback then safeSpawn(opts.Callback, state) end
 	end
 
-	holder.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			setState(not state, true)
-		end
+	switchBg.MouseButton1Click:Connect(function()
+		setState(not state, true)
 	end)
 
 	setState(state, false)
