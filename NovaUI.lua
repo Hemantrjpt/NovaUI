@@ -199,7 +199,7 @@ end
 -- Built-in icon glyphs (no asset upload needed). Pass any of these names as
 -- an `Icon` option, or pass "rbxassetid://..." / an http(s) URL for a custom image.
 local Icons = {
-	home     = "https://studio.lucide.dev/api/shadcn?value=2.15u1v-8En-1-1h-4En-1rv8M3r0Br_.709-1.528l7-6Bru.582nl7_6AJp1u1r0v9Br-o2H5Br-2-2z&name=house, -- ⌂
+	home     = "https://studio.lucide.dev/api/shadcn?value=2.15u1v-8En-1-1h-4En-1rv8M3r0Br_.709-1.528l7-6Bru.582nl7_6AJp1u1r0v9Br-o2H5Br-2-2z&name=house", -- ⌂
 	settings = "\226\154\153", -- ⚙
 	check    = "\226\156\147", -- ✓
 	cross    = "\226\156\149", -- ✕
