@@ -4803,14 +4803,7 @@ ThemeManager:ApplyToTab(Tabs.Settings)
 
 ThemeManager:LoadDefault()
 SaveManager:LoadAutoloadConfig()
-task.defer(function()
-    task.wait(1.5)
-    if Toggles.AutoKillToggle and Toggles.AutoKillToggle.Value then
-        if not AutoFarm._running and not isLobby then
-            AutoFarm:Start()
-        end
-    end
-end)
+
 
 
 Library:OnUnload(function()
