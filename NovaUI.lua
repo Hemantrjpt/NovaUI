@@ -199,19 +199,19 @@ end
 -- Built-in icon glyphs (no asset upload needed). Pass any of these names as
 -- an `Icon` option, or pass "rbxassetid://..." / an http(s) URL for a custom image.
 local Icons = {
-	home     = "\226\140\130", -- ⌂
-	settings = "\226\154\153", -- ⚙
-	check    = "\226\156\147", -- ✓
-	cross    = "\226\156\149", -- ✕
-	star     = "\226\152\133", -- ★
-	circle   = "\226\151\143", -- ●
-	square   = "\226\150\160", -- ■
-	warning  = "\226\154\160", -- ⚠
-	info     = "\226\147\152", -- ⓘ
-	chevronR = "\226\150\184", -- ▸
-	chevronD = "\226\150\190", -- ▾
-	dot      = "\226\128\162", -- ‣
-	bolt     = "\226\154\161", -- ⚡ (may render as a simple glyph on some fonts)
+	home     = "\226\140\130", -- âŒ‚
+	settings = "\226\154\153", -- âš™
+	check    = "\226\156\147", -- âœ“
+	cross    = "\226\156\149", -- âœ•
+	star     = "\226\152\133", -- â˜…
+	circle   = "\226\151\143", -- â—
+	square   = "\226\150\160", -- â– 
+	warning  = "\226\154\160", -- âš 
+	info     = "\226\147\152", -- â“˜
+	chevronR = "\226\150\184", -- â–¸
+	chevronD = "\226\150\190", -- â–¾
+	dot      = "\226\128\162", -- â€£
+	bolt     = "\226\154\161", -- âš¡ (may render as a simple glyph on some fonts)
 }
 
 -- Icon accepts three shapes:
@@ -879,7 +879,7 @@ function NovaUI:CreateWindow(opts)
 		Position = UDim2.new(1, -4, 1, -4),
 		Size = UDim2.new(0, 18, 0, 18),
 		BackgroundTransparency = 1,
-		Text = "◢",
+		Text = "â—¢",
 		Font = Enum.Font.GothamBold,
 		TextSize = 14,
 		TextColor3 = theme.SubTextColor,
@@ -928,7 +928,12 @@ function NovaUI:CreateWindow(opts)
 		Corner(25),
 		Stroke(theme.Stroke, 2),
 	})
-	if opts.LogoIcon then
+	local function isPlaceholderIcon(value)
+		if typeof(value) ~= "string" then return false end
+		return value == "" or value:match("^rbxassetid://0*$") ~= nil
+	end
+
+	if opts.LogoIcon and not isPlaceholderIcon(opts.LogoIcon) then
 		local icon = CreateIcon(opts.LogoIcon, 26, Color3.fromRGB(255, 255, 255))
 		if icon then
 			icon.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1184,7 +1189,7 @@ function NovaUI:CreateSection(name, sectionOpts)
 			Position = UDim2.new(1, -12, 0.5, 0),
 			Size = UDim2.new(0, 16, 0, 16),
 			Font = Enum.Font.GothamBold,
-			Text = "\226\150\190", -- ▾
+			Text = "\226\150\190", -- â–¾
 			TextColor3 = theme.SubTextColor,
 			TextSize = 14,
 			Parent = header,
