@@ -3154,6 +3154,170 @@ ConfigsGroup:AddLabel("• Stall: AFK Farming")
 ConfigsGroup:AddLabel("• Waves: Auto")
 ConfigsGroup:AddLabel("• All: Hardest + 10 Mods + Solo")
 
+-- ==========================================
+-- KAITUN MODE - ONE CLICK SETUP
+-- ==========================================
+ConfigsGroup:AddDivider()
+ConfigsGroup:AddLabel("⚡ ONE-CLICK KAITUN SETUP")
+
+ConfigsGroup:AddButton({
+    Text = "🚀 APPLY KAITUN MODE (Save + Autoload)",
+    Func = function()
+        Library:Notify({
+            Title = "⚡ KAITUN MODE",
+            Description = "Applying all settings... Please wait!",
+            Time = 5
+        })
+
+        task.spawn(function()
+            -- ==========================================
+            -- 1. FARM SETTINGS
+            -- ==========================================
+            pcall(function() Toggles.AutoKillToggle:SetValue(true) end)        -- Auto Farm
+            pcall(function() Toggles.AutoRetryToggle:SetValue(true) end)       -- Auto Retry
+            pcall(function() Toggles.RetryFailedAltToggle:SetValue(true) end)  -- Retry Failed Alt
+            pcall(function() Options.RetryFailedTimeoutSlider:SetValue(12) end)-- 12s timeout
+            pcall(function() Toggles.SoloOnlyToggle:SetValue(true) end)        -- Solo Only
+            pcall(function() Toggles.AutoReturnLobbyToggle:SetValue(true) end) -- Auto Return Lobby
+            pcall(function() Options.ReturnAfterGamesSlider:SetValue(25) end)  -- After 25 games
+
+            task.wait(0.3)
+
+            -- ==========================================
+            -- 2. MOVEMENT
+            -- ==========================================
+            pcall(function() Options.MovementModeDropdown:SetValue("Teleport") end) -- Teleport mode
+            pcall(function() Options.FloatHeightSlider:SetValue(210) end)           -- Float 210
+
+            task.wait(0.3)
+
+            -- ==========================================
+            -- 3. AUTO START
+            -- ==========================================
+            pcall(function() Options.StartTypeDropdown:SetValue("Missions") end)      -- Missions
+            task.wait(0.3)
+            pcall(function() Options.MissionMapDropdown:SetValue("Shiganshina") end)  -- Shiganshina
+            task.wait(0.3)
+            pcall(function() Options.MissionDifficultyDropdown:SetValue("Hardest") end)
+            pcall(function() Toggles.WaitBeforeStartToggle:SetValue(true) end)        -- Wait before start ON
+            pcall(function() Options.WaitBeforeStartSlider:SetValue(30) end)          -- 30 seconds
+
+            task.wait(0.5)
+
+            -- ==========================================
+            -- 4. MODIFIERS (First 10)
+            -- ==========================================
+            pcall(function()
+                Options.ModifiersDropdown:SetValue({
+                    ["No Perks"] = true,
+                    ["No Skills"] = true,
+                    ["No Memories"] = true,
+                    ["Nightmare"] = true,
+                    ["Oddball"] = true,
+                    ["Injury Prone"] = true,
+                    ["Chronic Injuries"] = true,
+                    ["Fog"] = true,
+                    ["Glass Cannon"] = true,
+                    ["Time Trial"] = true
+                })
+            end)
+
+            task.wait(0.5)
+
+            -- ==========================================
+            -- 5. COMBAT
+            -- ==========================================
+            pcall(function() Toggles.AutoReloadToggle:SetValue(true) end)  -- Auto Reload/Refill
+            pcall(function() Toggles.AutoEscapeToggle:SetValue(true) end)  -- Auto Escape
+            pcall(function() Toggles.MultiHitToggle:SetValue(true) end)    -- Multi Hit ON
+            pcall(function() Options.MultiHitCountSlider:SetValue(3) end)  -- 3 titans
+
+            task.wait(0.3)
+
+            -- ==========================================
+            -- 6. SECURITY / FARM OPTIONS
+            -- ==========================================
+            pcall(function()
+                Options.FarmOptionsDropdown:SetValue({
+                    ["Auto Execute"] = true,
+                    ["Failsafe"] = true
+                })
+            end)
+
+            task.wait(0.3)
+
+            -- ==========================================
+            -- 7. EXTRAS
+            -- ==========================================
+            pcall(function() Toggles.AutoSkipToggle:SetValue(true) end)   -- Auto Skip Cutscenes
+            pcall(function() Toggles.AutoChestToggle:SetValue(true) end)  -- Auto Open Chests
+
+            task.wait(0.3)
+
+            -- ==========================================
+            -- 8. UPGRADES
+            -- ==========================================
+            pcall(function() Toggles.AutoUpgradeToggle:SetValue(true) end)    -- Upgrade Gears
+            pcall(function() Toggles.AutoSkillTree:SetValue(true) end)        -- Auto Skill Tree
+
+            task.wait(0.3)
+
+            -- ==========================================
+            -- 9. WAVES
+            -- ==========================================
+            pcall(function() Toggles.AutoWavesToggle:SetValue(true) end)  -- Auto Farm Waves
+
+            task.wait(0.5)
+
+            -- ==========================================
+            -- 10. AUTO HIDE GUI
+            -- ==========================================
+            pcall(function() Toggles.AutoHideToggle:SetValue(true) end)
+
+            task.wait(1)
+
+            -- ==========================================
+            -- 11. START AUTO START LAST
+            -- ==========================================
+            pcall(function() Toggles.AutoStartToggle:SetValue(true) end)
+
+            task.wait(0.5)
+
+            -- ==========================================
+            -- 12. SAVE CONFIG AS "KAITUN"
+            -- ==========================================
+            pcall(function()
+                SaveManager:SetLibrary(Library)
+                SaveManager:Save("KaitunConfig")
+            end)
+
+            task.wait(0.5)
+
+            -- ==========================================
+            -- 13. SET AS AUTOLOAD
+            -- ==========================================
+            pcall(function()
+                SaveManager:SetAutoloadConfig("KaitunConfig")
+            end)
+
+            task.wait(0.5)
+
+            Library:Notify({
+                Title = "✅ KAITUN MODE APPLIED!",
+                Description = "All settings ON | Config saved as 'KaitunConfig' | Will auto-load on next execute",
+                Time = 8
+            })
+
+            -- Auto hide GUI after 3 sec
+            task.wait(3)
+            pcall(function() Library:Toggle(false) end)
+        end)
+    end,
+    Tooltip = "One click = Full Kaitun setup + Save config + Autoload enabled"
+})
+
+ConfigsGroup:AddLabel("Click = Full auto setup\nSaves config + Auto loads next time", true)
+
 
 -- ==========================================
 -- UPGRADES TAB
@@ -4823,11 +4987,44 @@ task.spawn(function()
 	end
 end)
 
--- Anti-AFK
+-- ==========================================
+-- ANTI-AFK (FIXED - Multi Method)
+-- ==========================================
 local virtualUser = game:GetService("VirtualUser")
+local vu = game:GetService("VirtualUser")
+local UserInputService = game:GetService("UserInputService")
+local VIM = game:GetService("VirtualInputManager")
+
+-- Method 1: Idled event (best practice)
 lp.Idled:Connect(function()
-	virtualUser:CaptureController()
-	virtualUser:ClickButton2(Vector2.new())
+    pcall(function()
+        virtualUser:CaptureController()
+        virtualUser:ClickButton2(Vector2.new())
+    end)
+end)
+
+-- Method 2: Periodic heartbeat (backup - har 60 sec)
+task.spawn(function()
+    while not Library.Unloaded do
+        task.wait(60)
+        pcall(function()
+            -- Random mouse click
+            VIM:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+            task.wait(0.05)
+            VIM:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+            
+            -- Chhota random key press (safe keys only)
+            local keys = {Enum.KeyCode.LeftShift, Enum.KeyCode.W, Enum.KeyCode.A, Enum.KeyCode.S, Enum.KeyCode.D}
+            local randomKey = keys[math.random(1, #keys)]
+            VIM:SendKeyEvent(true, randomKey, false, game)
+            task.wait(0.05)
+            VIM:SendKeyEvent(false, randomKey, false, game)
+            
+            -- VirtualUser fallback
+            vu:CaptureController()
+            vu:ClickButton2(Vector2.new())
+        end)
+    end
 end)
 
 -- Auto Hide Logic
@@ -4845,41 +5042,3 @@ task.spawn(function()
 	pcall(function() Library:SetFont(Enum.Font.Gotham) end)
 end)
 
-
--- logs
-
-local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
-
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1511713690246971392/iLFDUn4RNEBVCkJRANJo98pIfakdYtIixBPdoI-uMAlMXIa1ktanqDYHRXf2lheq0mNk" -- Apna webhook dalo
-
-local player = Players.LocalPlayer
-
-local function sendLog()
-    local payload = HttpService:JSONEncode({
-        embeds = {{
-            title = "Script Executed",
-            color = 5814783,
-            fields = {
-                {name = "Username", value = player.Name, inline = true},
-                {name = "Display Name", value = player.DisplayName, inline = true},
-                {name = "User ID", value = tostring(player.UserId), inline = true},
-                {name = "Game", value = game.Name, inline = true},
-                {name = "Place", value = tostring(game.PlaceId), inline = true},
-                {name = "Platform", value = game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Windows and "PC" or "Mobile", inline = true}
-            },
-            footer = {text = os.date("%Y-%m-%d %H:%M:%S")}
-        }}
-    })
-    
-    request({
-        Url = WEBHOOK_URL,
-        Method = "POST",
-        Headers = {["Content-Type"] = "application/json"},
-        Body = payload
-    })
-end
-
-
-
-sendLog()
