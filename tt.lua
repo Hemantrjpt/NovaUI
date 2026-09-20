@@ -129,7 +129,7 @@ getgenv().AutoBuyBoosts = false
 getgenv().AutoUsePotions = false
 getgenv().AutoBuySpins = false
 getgenv().AutoBuyCrates = false
-getgenv().BladeBossHitsCount = 35
+getgenv().BladeBossHitsCount = 20
 getgenv().AutoOpenCratesEnabled = false
 if not isfile(returnCounterPath) then writefile(returnCounterPath, "0") end
 
@@ -739,7 +739,7 @@ function AutoFarm:Start()
 					if slotData.Weapon == "Blades" then
     postRemote:FireServer("Attacks", "Slash", true)
     local isBossTarget = bossNames[targetPart.Parent.Parent.Parent.Name]
-    local bladeLoops = getgenv().BladeBossHitsCount or 1
+    local bladeLoops = getgenv().BladeBossHitsCount or 10
     for j = 1, bladeLoops do
         for _, nape in ipairs(hitTargets) do
             postRemote:FireServer("Hitboxes", "Register", nape, math.random(625, 850))
@@ -1327,7 +1327,7 @@ local function setupAutoExecute()
 			repeat task.wait() until game:IsLoaded()
 			task.wait(5)
 			getgenv().AutoExec = false
-			loadstring(game:HttpGet("https://raw.githubusercontent.com/Hemantrjpt/NovaUI/refs/heads/main/tt.lua"))()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/Hemantrjpt/NovaUI/main/tt.lua"))()
 		]])
 	end
 end
