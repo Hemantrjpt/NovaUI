@@ -771,7 +771,7 @@ else
 									end
 								end
 								
-								local loops = isBoss and 40 or 1
+								local loops = isBoss and 20 or 1
 								for j = 1, loops do
 									for _, nape in ipairs(hitTargets) do
 										postRemote:FireServer("Spears", "S_Explode", nape.Position)
