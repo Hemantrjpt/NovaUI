@@ -739,7 +739,7 @@ function AutoFarm:Start()
 					if slotData.Weapon == "Blades" then
     postRemote:FireServer("Attacks", "Slash", true)
     local isBossTarget = bossNames[targetPart.Parent.Parent.Parent.Name]
-    local bladeLoops = getgenv().BladeBossHitsCount or 10
+    local bladeLoops = getgenv().BladeBossHitsCount or 1
     for j = 1, bladeLoops do
         for _, nape in ipairs(hitTargets) do
             postRemote:FireServer("Hitboxes", "Register", nape, math.random(625, 850))
