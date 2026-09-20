@@ -1773,7 +1773,7 @@ local MarketBoostGroup      = Tabs.Market:AddLeftGroupbox("Boosts / Potions", "z
 local MarketSpinsGroup      = Tabs.Market:AddLeftGroupbox("Spins", "rotate-cw")
 local MarketCratesBuyGroup  = Tabs.Market:AddRightGroupbox("Buy Crates", "package")
 local MarketCratesOpenGroup = Tabs.Market:AddRightGroupbox("Open Crates", "gift")
-
+local MarketProgressionGroup = Tabs.Market:AddRightGroupbox("Progression", "trending-up")
 
 -- Global tab
 local FamilyRollGroup = Tabs.Global:AddLeftGroupbox("Family Roll", "shuffle")
@@ -4581,6 +4581,114 @@ MarketCratesOpenGroup:AddButton({
 })
 
 MarketCratesOpenGroup:AddLabel("Auto open stops when inventory\nis empty. Buy more first!")
+
+-- ==========================================
+-- MARKET TAB : Progression (Shards & Keys)
+-- ==========================================
+
+local progressionItems = {
+    [1] = "Colossal Shard",
+    [2] = "Female Shard",
+    [3] = "Armored Shard",
+    [4] = "Attack Shard",
+    [5] = "Emperor's Key",
+    [6] = "Memory Scroll"
+}
+
+local progressionIndexMap = {
+    ["Colossal Shard"] = 1,
+    ["Female Shard"] = 2,
+    ["Armored Shard"] = 3,
+    ["Attack Shard"] = 4,
+    ["Emperor's Key"] = 5,
+    ["Memory Scroll"] = 6
+}
+
+local progressionValues = {"Colossal Shard", "Female Shard", "Armored Shard", "Attack Shard", "Emperor's Key", "Memory Scroll"}
+
+
+MarketProgressionGroup:AddToggle("AutoBuyProgressionToggle", {
+    Text = "Auto Buy Progression Items",
+    Default = false,
+    Tooltip = "Continuously buys selected progression items from the market"
+})
+Toggles.AutoBuyProgressionToggle:OnChanged(function()
+    getgenv().AutoBuyProgression = Toggles.AutoBuyProgressionToggle.Value
+    if not getgenv().AutoBuyProgression then return end
+    task.spawn(function()
+        while getgenv().AutoBuyProgression do
+            local selected = Options.MarketProgressionSelectDropdown.Value or {}
+            local amount = Options.MarketProgressionAmountSlider.Value or 1
+            local boughtAny = false
+            for itemName, isActive in pairs(selected) do
+                if not isActive then continue end
+                local idx = progressionIndexMap[itemName]
+                if not idx then continue end
+                local ok, result = pcall(function()
+                    return getRemote:InvokeServer("S_Market", "Buy", "1_Progression", idx, amount)
+                end)
+                if ok and result ~= nil and result ~= false then
+                    boughtAny = true
+                    Library:Notify({ Title = "Progression", Description = "✅ Bought " .. amount .. "x " .. itemName, Time = 2 })
+                elseif ok and (result == nil or result == false) then
+                    Library:Notify({ Title = "Progression", Description = "❌ " .. itemName .. " – not enough coins!", Time = 2 })
+                end
+                task.wait(0.5)
+            end
+            task.wait(boughtAny and 30 or 5)
+        end
+    end)
+end)
+
+MarketProgressionGroup:AddDropdown("MarketProgressionSelectDropdown", {
+    Values = progressionValues,
+    Default = {},
+    Multi = true,
+    Text = "Select Items to Buy",
+    Tooltip = "Pick which progression items to auto-purchase"
+})
+
+MarketProgressionGroup:AddSlider("MarketProgressionAmountSlider", {
+    Text = "Amount",
+    Default = 1,
+    Min = 1,
+    Max = 99,
+    Rounding = 0,
+})
+
+MarketProgressionGroup:AddDivider()
+
+MarketProgressionGroup:AddButton({
+    Text = "Buy Selected Now",
+    Func = function()
+        task.spawn(function()
+            local selected = Options.MarketProgressionSelectDropdown.Value or {}
+            local amount = Options.MarketProgressionAmountSlider.Value or 1
+            local bought = 0
+            for itemName, isActive in pairs(selected) do
+                if not isActive then continue end
+                local idx = progressionIndexMap[itemName]
+                if not idx then continue end
+                local ok, result = pcall(function()
+                    return getRemote:InvokeServer("S_Market", "Buy", "1_Progression", idx, amount)
+                end)
+                if ok and result ~= nil and result ~= false then
+                    bought = bought + 1
+                    Library:Notify({ Title = "Progression", Description = "✅ Bought " .. amount .. "x " .. itemName, Time = 2 })
+                else
+                    Library:Notify({ Title = "Progression", Description = "❌ " .. itemName .. " failed!", Time = 2 })
+                end
+                task.wait(0.3)
+            end
+            if bought == 0 then
+                Library:Notify({ Title = "Progression", Description = "No items selected!", Time = 3 })
+            end
+        end)
+    end,
+    Tooltip = "Instantly buy selected progression items"
+})
+
+MarketProgressionGroup:AddLabel("Colossal Shard | Female Shard | Armored Shard\nAttack Shard | Emperor's Key | Memory Scroll")
 
 
 -- ==========================================
