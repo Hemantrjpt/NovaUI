@@ -129,7 +129,7 @@ getgenv().AutoBuyBoosts = false
 getgenv().AutoUsePotions = false
 getgenv().AutoBuySpins = false
 getgenv().AutoBuyCrates = false
-getgenv().BladeBossHitsCount = 20
+getgenv().BladeBossHitsCount = 35
 getgenv().AutoOpenCratesEnabled = false
 if not isfile(returnCounterPath) then writefile(returnCounterPath, "0") end
 
@@ -737,15 +737,11 @@ function AutoFarm:Start()
 					end
 
 					if slotData.Weapon == "Blades" then
-    postRemote:FireServer("Attacks", "Slash", true)
-    local isBossTarget = bossNames[targetPart.Parent.Parent.Parent.Name]
-    local bladeLoops = getgenv().BladeBossHitsCount or 1
-    for j = 1, bladeLoops do
-        for _, nape in ipairs(hitTargets) do
-            postRemote:FireServer("Hitboxes", "Register", nape, math.random(625, 850))
-        end
-    end
-else
+						postRemote:FireServer("Attacks", "Slash", true)
+						for _, nape in ipairs(hitTargets) do
+							postRemote:FireServer("Hitboxes", "Register", nape, math.random(625, 850))
+						end
+					else
 						local isBoss = bossNames[targetPart.Parent.Parent.Parent.Name]
 						local spearsLabel = PlayerGui.Interface.HUD.Main.Top["7"].Spears.Spears
 						local text = spearsLabel.Text
@@ -771,7 +767,7 @@ else
 									end
 								end
 								
-								local loops = isBoss and 20 or 1
+								local loops = isBoss and 40 or 1
 								for j = 1, loops do
 									for _, nape in ipairs(hitTargets) do
 										postRemote:FireServer("Spears", "S_Explode", nape.Position)
@@ -1327,7 +1323,7 @@ local function setupAutoExecute()
 			repeat task.wait() until game:IsLoaded()
 			task.wait(5)
 			getgenv().AutoExec = false
-			loadstring(game:HttpGet("https://raw.githubusercontent.com/Hemantrjpt/NovaUI/main/tt.lua"))()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/TITANIC-HUB/AOTR/main/Loader.lua"))()
 		]])
 	end
 end
@@ -1482,6 +1478,26 @@ local function roll(targets, rarities)
 				Library.Toggles.AutoRollToggle:SetValue(false)
 			end
 		end)
+
+		local highValueRarities = {"epic", "legendary", "mythical"}
+		if table.find(highValueRarities, familyRarity) then
+			pcall(function()
+				Library:Notify({
+					Title = "TITANIC HUB",
+					Description = "Rolled: Targeted Family\n" .. familyString,
+					Time = 6,
+				})
+			end)
+			task.delay(1.5, function()
+				pcall(function()
+					getRemote:InvokeServer("Functions", "Teleport", "Lobby")
+				end)
+				task.wait(0.5)
+				pcall(function()
+					TeleportService:Teleport(14916516914, lp)
+				end)
+			end)
+		end
 
 		if familyRarity == "mythical" and webhook and webhook ~= "" then
 			local rareMythicals = {"helos", "fritz", "reiss", "tybur"}
@@ -1727,7 +1743,9 @@ local Window = Library:CreateWindow({
 })
 
 local Tabs = {
+	Info     = Window:AddTab("Info",     "info"),
 	Farm     = Window:AddTab("Main",     "house"),
+	Fun      = Window:AddTab("Fun",      "party-popper"),
 	Utility  = Window:AddTab("Utils",  "zap"),
 	Configs  = Window:AddTab("Configs", "settings-2"),
 	Upgrades = Window:AddTab("Upgrades", "trending-up"),
@@ -1739,11 +1757,21 @@ local Tabs = {
 	Settings = Window:AddTab("Settings", "settings"),
 }
 
+-- Info tab
+local InfoGroup = Tabs.Info:AddLeftGroupbox("Account Info", "user")
+local LinksGroup = Tabs.Info:AddRightGroupbox("Links", "link")
+
 -- Farm tab
 local MiscGroup      = Tabs.Farm:AddLeftGroupbox("Misc", "compass")
 local MainGroup      = Tabs.Farm:AddLeftGroupbox("Farm", "tractor")
 local MovementGroup  = Tabs.Farm:AddRightGroupbox("Movement", "move")
 local AutoStartGroup = Tabs.Farm:AddRightGroupbox("Auto Start", "power")
+
+-- Fun tab
+local FunMovementGroup = Tabs.Fun:AddLeftGroupbox("Movement", "move")
+local FunVisualGroup   = Tabs.Fun:AddLeftGroupbox("Visuals", "eye")
+local FunMiscGroup     = Tabs.Fun:AddRightGroupbox("Misc", "sparkles")
+local FunSafetyGroup   = Tabs.Fun:AddRightGroupbox("Safety", "shield")
 
 -- Utility tab
 local CombatGroup   = Tabs.Utility:AddLeftGroupbox("Combat Settings", "shield")
@@ -1773,7 +1801,6 @@ local MarketBoostGroup      = Tabs.Market:AddLeftGroupbox("Boosts / Potions", "z
 local MarketSpinsGroup      = Tabs.Market:AddLeftGroupbox("Spins", "rotate-cw")
 local MarketCratesBuyGroup  = Tabs.Market:AddRightGroupbox("Buy Crates", "package")
 local MarketCratesOpenGroup = Tabs.Market:AddRightGroupbox("Open Crates", "gift")
-local MarketProgressionGroup = Tabs.Market:AddRightGroupbox("Progression", "trending-up")
 
 -- Global tab
 local FamilyRollGroup = Tabs.Global:AddLeftGroupbox("Family Roll", "shuffle")
@@ -1788,8 +1815,68 @@ local CrashGroup   = Tabs.Stats:AddRightGroupbox("Auto Rejoin", "log-in")
 
 
 -- ==========================================
--- FARM TAB : Misc
+-- INFO TAB
 -- ==========================================
+
+local executorName = "Unknown"
+pcall(function()
+	if identifyexecutor then
+		executorName = identifyexecutor()
+	elseif getexecutorname then
+		executorName = getexecutorname()
+	end
+end)
+
+InfoGroup:AddLabel("Username: " .. lp.Name)
+InfoGroup:AddLabel("Display Name: " .. lp.DisplayName)
+InfoGroup:AddLabel("User ID: " .. tostring(lp.UserId))
+InfoGroup:AddLabel("Executor: " .. tostring(executorName))
+InfoGroup:AddLabel('Script Type: <font color="#FF0000">Freemium</font>', false)
+
+local shadowBanLabel = InfoGroup:AddLabel("Shadow Ban Status: Checking...")
+
+local function updateShadowBanStatus()
+	local bl = lp:GetAttribute("Blacklisted") == true
+	local ex = lp:GetAttribute("Exploiter") == true
+	local flags = (bl and 1 or 0) + (ex and 1 or 0)
+	local res = flags == 0 and "Clean" or (flags == 1 and "Flagged" or "Banned")
+	local color = flags == 0 and "#00FF00" or (flags == 1 and "#FFA500" or "#FF0000")
+	pcall(function()
+		shadowBanLabel:SetText('Shadow Ban Status: <font color="' .. color .. '">' .. res .. '</font>')
+	end)
+	return res
+end
+
+task.spawn(function()
+	while true do
+		pcall(updateShadowBanStatus)
+		task.wait(10)
+	end
+end)
+
+InfoGroup:AddButton({
+	Text = "Refresh Now",
+	Func = function()
+		local res = updateShadowBanStatus()
+		Library:Notify({
+			Title = "Shadow Ban Check",
+			Description = "Status: " .. res,
+			Time = 5
+		})
+	end,
+})
+
+LinksGroup:AddButton({
+	Text = "Join Discord",
+	Func = function()
+		setclipboard("https://discord.gg/r9yDvcmW7Q")
+		Library:Notify({ Title = "Discord", Description = "Invite link copied!", Time = 5 })
+	end,
+})
+
+LinksGroup:AddLabel("discord.gg/r9yDvcmW7Q")
+
+
 
 MiscGroup:AddButton({
 	Text = "Return to Lobby",
@@ -1832,6 +1919,472 @@ MiscGroup:AddButton({
 		Library:Notify({ Title = "Discord", Description = "Invite link copied!", Time = 5 })
 	end,
 })
+
+-- ==========================================
+-- FUN TAB
+-- ==========================================
+
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local StarterGui = game:GetService("StarterGui")
+
+local function getChar()
+	return lp.Character
+end
+
+local function getHum()
+	local c = getChar()
+	return c and c:FindFirstChildOfClass("Humanoid")
+end
+
+local function getRoot()
+	local c = getChar()
+	return c and c:FindFirstChild("HumanoidRootPart")
+end
+
+-- ===== Movement: Jump Power =====
+
+FunMovementGroup:AddSlider("FunJumpPowerSlider", {
+	Text = "Jump Power",
+	Default = 50,
+	Min = 50,
+	Max = 300,
+	Rounding = 0,
+})
+Options.FunJumpPowerSlider:OnChanged(function()
+	local hum = getHum()
+	if hum then
+		hum.UseJumpPower = true
+		hum.JumpPower = Options.FunJumpPowerSlider.Value
+	end
+end)
+
+-- ===== Misc: Dance =====
+
+local danceIds = {
+	["Dance 1"] = "507771019",
+	["Dance 2"] = "507776043",
+	["Dance 3"] = "507777268",
+}
+getgenv().FunDanceTrack = nil
+
+local function stopDance()
+	if getgenv().FunDanceTrack then
+		pcall(function() getgenv().FunDanceTrack:Stop() end)
+		getgenv().FunDanceTrack = nil
+	end
+end
+
+local function playDance(animId)
+	stopDance()
+	local hum = getHum()
+	if not hum then return end
+	local animator = hum:FindFirstChildOfClass("Animator")
+	if not animator then return end
+	local anim = Instance.new("Animation")
+	anim.AnimationId = "rbxassetid://" .. animId
+	local ok, track = pcall(function() return animator:LoadAnimation(anim) end)
+	if ok and track then
+		track.Looped = true
+		track:Play()
+		getgenv().FunDanceTrack = track
+	end
+end
+
+FunMiscGroup:AddDropdown("FunDanceDropdown", {
+	Values = {"Dance 1", "Dance 2", "Dance 3"},
+	Default = 1,
+	Multi = false,
+	Text = "Dance Style",
+})
+
+FunMiscGroup:AddToggle("FunDanceToggle", {
+	Text = "Dance",
+	Default = false,
+})
+Toggles.FunDanceToggle:OnChanged(function()
+	if Toggles.FunDanceToggle.Value then
+		playDance(danceIds[Options.FunDanceDropdown.Value])
+	else
+		stopDance()
+	end
+end)
+
+lp.CharacterAdded:Connect(function()
+	task.wait(1)
+	if Toggles.FunDanceToggle and Toggles.FunDanceToggle.Value then
+		playDance(danceIds[Options.FunDanceDropdown.Value])
+	end
+end)
+
+-- ===== Misc: Chat Spam =====
+
+local TextChatService = game:GetService("TextChatService")
+getgenv().FunSpamRunning = false
+
+local function sendChat(msg)
+	pcall(function()
+		if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+			local channel = TextChatService.TextChannels and TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+			if channel then channel:SendAsync(msg) end
+		else
+			game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents"):WaitForChild("SayMessageRequest"):FireServer(msg, "All")
+		end
+	end)
+end
+
+FunMiscGroup:AddInput("FunSpamMessageInput", {
+	Text = "Spam Message",
+	Default = "TITANIC HUB",
+	Finished = false,
+})
+
+FunMiscGroup:AddSlider("FunSpamDelaySlider", {
+	Text = "Spam Delay (sec)",
+	Default = 1,
+	Min = 0.5,
+	Max = 10,
+	Rounding = 1,
+})
+
+FunMiscGroup:AddToggle("FunSpamToggle", {
+	Text = "Chat Spam",
+	Default = false,
+})
+Toggles.FunSpamToggle:OnChanged(function()
+	getgenv().FunSpamRunning = Toggles.FunSpamToggle.Value
+	if getgenv().FunSpamRunning then
+		task.spawn(function()
+			while getgenv().FunSpamRunning do
+				sendChat(Options.FunSpamMessageInput.Value)
+				task.wait(Options.FunSpamDelaySlider.Value)
+			end
+		end)
+	end
+end)
+
+-- ===== Misc: Custom Animation ID (walk/idle) =====
+
+getgenv().FunCustomAnimConns = {}
+
+local function clearCustomAnims()
+	for _, c in pairs(getgenv().FunCustomAnimConns) do
+		pcall(function() c:Disconnect() end)
+	end
+	getgenv().FunCustomAnimConns = {}
+end
+
+FunMiscGroup:AddInput("FunAnimIdInput", {
+	Text = "Animation ID (Walk)",
+	Default = "",
+	Finished = true,
+})
+
+FunMiscGroup:AddButton({
+	Text = "Apply Custom Animation",
+	Func = function()
+		local animId = Options.FunAnimIdInput.Value
+		if not animId or animId == "" then
+			Library:Notify({ Title = "Custom Animation", Description = "Enter an Animation ID first!", Time = 3 })
+			return
+		end
+		local hum = getHum()
+		local char = getChar()
+		if not hum or not char then return end
+		local animateScript = char:FindFirstChild("Animate")
+		if not animateScript then return end
+		local walkAnim = animateScript:FindFirstChild("walk")
+		if walkAnim and walkAnim:FindFirstChild("WalkAnim") then
+			walkAnim.WalkAnim.AnimationId = "rbxassetid://" .. animId
+		end
+		Library:Notify({ Title = "Custom Animation", Description = "Applied to walk animation!", Time = 3 })
+	end,
+})
+
+FunMiscGroup:AddButton({
+	Text = "Reset Animations",
+	Func = function()
+		clearCustomAnims()
+		local char = getChar()
+		if char then
+			pcall(function() char:WaitForChild("Animate").Disabled = true end)
+			task.wait()
+			pcall(function() char:WaitForChild("Animate").Disabled = false end)
+		end
+		Library:Notify({ Title = "Custom Animation", Description = "Reset to default!", Time = 3 })
+	end,
+})
+
+-- ===== Misc: Stopwatch =====
+
+local stopwatchRunning = false
+local stopwatchStart = 0
+local stopwatchElapsed = 0
+
+local function formatStopwatch(t)
+	local mins = math.floor(t / 60)
+	local secs = math.floor(t % 60)
+	local ms = math.floor((t * 100) % 100)
+	return string.format("%02d:%02d.%02d", mins, secs, ms)
+end
+
+local stopwatchLabel = FunMiscGroup:AddLabel("Stopwatch: 00:00.00")
+
+task.spawn(function()
+	while true do
+		task.wait(0.05)
+		if stopwatchRunning then
+			local current = stopwatchElapsed + (os.clock() - stopwatchStart)
+			pcall(function() stopwatchLabel:SetText("Stopwatch: " .. formatStopwatch(current)) end)
+		end
+	end
+end)
+
+FunMiscGroup:AddButton({
+	Text = "Start / Pause",
+	Func = function()
+		if stopwatchRunning then
+			stopwatchElapsed = stopwatchElapsed + (os.clock() - stopwatchStart)
+			stopwatchRunning = false
+		else
+			stopwatchStart = os.clock()
+			stopwatchRunning = true
+		end
+	end,
+})
+
+FunMiscGroup:AddButton({
+	Text = "Reset Stopwatch",
+	Func = function()
+		stopwatchRunning = false
+		stopwatchElapsed = 0
+		pcall(function() stopwatchLabel:SetText("Stopwatch: 00:00.00") end)
+	end,
+})
+
+-- ===== Misc: Day / Night =====
+
+local Lighting = game:GetService("Lighting")
+local originalClockTime = Lighting.ClockTime
+
+FunMiscGroup:AddDropdown("FunDayNightDropdown", {
+	Values = {"Default", "Day", "Night"},
+	Default = 1,
+	Multi = false,
+	Text = "Day / Night",
+})
+Options.FunDayNightDropdown:OnChanged(function()
+	local mode = Options.FunDayNightDropdown.Value
+	if mode == "Day" then
+		Lighting.ClockTime = 12
+	elseif mode == "Night" then
+		Lighting.ClockTime = 0
+	else
+		Lighting.ClockTime = originalClockTime
+	end
+end)
+
+
+
+getgenv().FunTitanESP = false
+local espHighlights = {}
+
+local function clearTitanESP()
+	for _, h in pairs(espHighlights) do
+		pcall(function() h:Destroy() end)
+	end
+	espHighlights = {}
+end
+
+local function applyTitanESP()
+	clearTitanESP()
+	local titansFolder = Workspace:FindFirstChild("Titans")
+	if not titansFolder then return end
+	for _, titanModel in pairs(titansFolder:GetChildren()) do
+		if titanModel:IsA("Model") and not espHighlights[titanModel] then
+			local hl = Instance.new("Highlight")
+			hl.FillColor = Color3.fromRGB(255, 0, 0)
+			hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+			hl.FillTransparency = 0.5
+			hl.Parent = titanModel
+			table.insert(espHighlights, hl)
+		end
+	end
+end
+
+task.spawn(function()
+	while true do
+		task.wait(2)
+		if getgenv().FunTitanESP then
+			applyTitanESP()
+		end
+	end
+end)
+
+FunVisualGroup:AddToggle("FunTitanESPToggle", {
+	Text = "Titan ESP",
+	Default = false,
+})
+Toggles.FunTitanESPToggle:OnChanged(function()
+	getgenv().FunTitanESP = Toggles.FunTitanESPToggle.Value
+	if getgenv().FunTitanESP then
+		applyTitanESP()
+	else
+		clearTitanESP()
+	end
+end)
+
+-- ===== Visuals: Nape Highlighter =====
+
+getgenv().FunNapeHighlight = false
+local napeHighlights = {}
+
+local function clearNapeHighlights()
+	for _, h in pairs(napeHighlights) do
+		pcall(function() h:Destroy() end)
+	end
+	napeHighlights = {}
+end
+
+local function applyNapeHighlights()
+	clearNapeHighlights()
+	local titansFolder = Workspace:FindFirstChild("Titans")
+	if not titansFolder then return end
+	for _, titanModel in pairs(titansFolder:GetChildren()) do
+		local nape = titanModel:FindFirstChild("Nape")
+		if nape and nape:IsA("BasePart") then
+			local bg = Instance.new("BillboardGui")
+			bg.Name = "NapeMarker"
+			bg.Adornee = nape
+			bg.AlwaysOnTop = true
+			bg.Size = UDim2.new(4, 0, 4, 0)
+			bg.Parent = nape
+
+			local frame = Instance.new("Frame")
+			frame.Size = UDim2.new(1, 0, 1, 0)
+			frame.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+			frame.BackgroundTransparency = 0.4
+			frame.BorderSizePixel = 0
+			frame.Parent = bg
+
+			local corner = Instance.new("UICorner")
+			corner.CornerRadius = UDim.new(1, 0)
+			corner.Parent = frame
+
+			table.insert(napeHighlights, bg)
+		end
+	end
+end
+
+task.spawn(function()
+	while true do
+		task.wait(2)
+		if getgenv().FunNapeHighlight then
+			applyNapeHighlights()
+		end
+	end
+end)
+
+FunVisualGroup:AddToggle("FunNapeHighlightToggle", {
+	Text = "Nape Highlighter (Titans)",
+	Default = false,
+	Tooltip = "Visually marks the killable nape spot on titans. Does not change hitbox size."
+})
+Toggles.FunNapeHighlightToggle:OnChanged(function()
+	getgenv().FunNapeHighlight = Toggles.FunNapeHighlightToggle.Value
+	if getgenv().FunNapeHighlight then
+		applyNapeHighlights()
+	else
+		clearNapeHighlights()
+	end
+end)
+
+-- ===== Safety: Hide Game GUIs =====
+
+local hiddenCoreGuiState = false
+
+FunSafetyGroup:AddToggle("FunHideGuiToggle", {
+	Text = "Hide Game GUIs",
+	Default = false,
+	Tooltip = "Hides the game's own UI (health bar, chat, backpack, etc), not the hub menu"
+})
+Toggles.FunHideGuiToggle:OnChanged(function()
+	hiddenCoreGuiState = Toggles.FunHideGuiToggle.Value
+	pcall(function()
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, not hiddenCoreGuiState)
+	end)
+	for _, gui in pairs(PlayerGui:GetChildren()) do
+		if gui:IsA("ScreenGui") then
+			gui.Enabled = not hiddenCoreGuiState
+		end
+	end
+end)
+
+FunSafetyGroup:AddButton({
+	Text = "Force Unhide GUIs",
+	Func = function()
+		hiddenCoreGuiState = false
+		pcall(function() Toggles.FunHideGuiToggle:SetValue(false) end)
+		pcall(function()
+			StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
+		end)
+		for _, gui in pairs(PlayerGui:GetChildren()) do
+			if gui:IsA("ScreenGui") then
+				gui.Enabled = true
+			end
+		end
+		Library:Notify({ Title = "Hide GUI", Description = "All game GUIs restored!", Time = 3 })
+	end,
+})
+
+-- ===== Safety: Server Hop =====
+
+local HttpServiceFun = game:GetService("HttpService")
+
+FunSafetyGroup:AddButton({
+	Text = "Server Hop",
+	Func = function()
+		task.spawn(function()
+			local success, response = pcall(function()
+				return HttpServiceFun:JSONDecode(game:HttpGet(
+					"https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+				))
+			end)
+			if not success or not response or not response.data then
+				Library:Notify({ Title = "Server Hop", Description = "Failed to fetch server list!", Time = 4 })
+				return
+			end
+			local candidates = {}
+			for _, server in pairs(response.data) do
+				if server.playing and server.maxPlayers and server.playing < server.maxPlayers and server.id ~= game.JobId then
+					table.insert(candidates, server.id)
+				end
+			end
+			if #candidates == 0 then
+				Library:Notify({ Title = "Server Hop", Description = "No available servers found!", Time = 4 })
+				return
+			end
+			local target = candidates[math.random(1, #candidates)]
+			Library:Notify({ Title = "Server Hop", Description = "Hopping servers...", Time = 3 })
+			task.wait(1)
+			pcall(function()
+				TeleportService:TeleportToPlaceInstance(game.PlaceId, target, lp)
+			end)
+		end)
+	end,
+})
+
+-- ===== Safety: Anti-AFK =====
+
+FunSafetyGroup:AddToggle("FunAntiAFKToggle", {
+	Text = "Anti AFK",
+	Default = true,
+})
+Toggles.FunAntiAFKToggle:OnChanged(function()
+	getgenv().FunAntiAFKEnabled = Toggles.FunAntiAFKToggle.Value
+end)
+getgenv().FunAntiAFKEnabled = true
 
 -- ==========================================
 -- FARM TAB : Farm
@@ -3154,170 +3707,6 @@ ConfigsGroup:AddLabel("• Stall: AFK Farming")
 ConfigsGroup:AddLabel("• Waves: Auto")
 ConfigsGroup:AddLabel("• All: Hardest + 10 Mods + Solo")
 
--- ==========================================
--- KAITUN MODE - ONE CLICK SETUP
--- ==========================================
-ConfigsGroup:AddDivider()
-ConfigsGroup:AddLabel("⚡ ONE-CLICK KAITUN SETUP")
-
-ConfigsGroup:AddButton({
-    Text = "🚀 APPLY KAITUN MODE (Save + Autoload)",
-    Func = function()
-        Library:Notify({
-            Title = "⚡ KAITUN MODE",
-            Description = "Applying all settings... Please wait!",
-            Time = 5
-        })
-
-        task.spawn(function()
-            -- ==========================================
-            -- 1. FARM SETTINGS
-            -- ==========================================
-            pcall(function() Toggles.AutoKillToggle:SetValue(true) end)        -- Auto Farm
-            pcall(function() Toggles.AutoRetryToggle:SetValue(true) end)       -- Auto Retry
-            pcall(function() Toggles.RetryFailedAltToggle:SetValue(true) end)  -- Retry Failed Alt
-            pcall(function() Options.RetryFailedTimeoutSlider:SetValue(12) end)-- 12s timeout
-            pcall(function() Toggles.SoloOnlyToggle:SetValue(true) end)        -- Solo Only
-            pcall(function() Toggles.AutoReturnLobbyToggle:SetValue(true) end) -- Auto Return Lobby
-            pcall(function() Options.ReturnAfterGamesSlider:SetValue(25) end)  -- After 25 games
-
-            task.wait(0.3)
-
-            -- ==========================================
-            -- 2. MOVEMENT
-            -- ==========================================
-            pcall(function() Options.MovementModeDropdown:SetValue("Teleport") end) -- Teleport mode
-            pcall(function() Options.FloatHeightSlider:SetValue(210) end)           -- Float 210
-
-            task.wait(0.3)
-
-            -- ==========================================
-            -- 3. AUTO START
-            -- ==========================================
-            pcall(function() Options.StartTypeDropdown:SetValue("Missions") end)      -- Missions
-            task.wait(0.3)
-            pcall(function() Options.MissionMapDropdown:SetValue("Shiganshina") end)  -- Shiganshina
-            task.wait(0.3)
-            pcall(function() Options.MissionDifficultyDropdown:SetValue("Hardest") end)
-            pcall(function() Toggles.WaitBeforeStartToggle:SetValue(true) end)        -- Wait before start ON
-            pcall(function() Options.WaitBeforeStartSlider:SetValue(30) end)          -- 30 seconds
-
-            task.wait(0.5)
-
-            -- ==========================================
-            -- 4. MODIFIERS (First 10)
-            -- ==========================================
-            pcall(function()
-                Options.ModifiersDropdown:SetValue({
-                    ["No Perks"] = true,
-                    ["No Skills"] = true,
-                    ["No Memories"] = true,
-                    ["Nightmare"] = true,
-                    ["Oddball"] = true,
-                    ["Injury Prone"] = true,
-                    ["Chronic Injuries"] = true,
-                    ["Fog"] = true,
-                    ["Glass Cannon"] = true,
-                    ["Time Trial"] = true
-                })
-            end)
-
-            task.wait(0.5)
-
-            -- ==========================================
-            -- 5. COMBAT
-            -- ==========================================
-            pcall(function() Toggles.AutoReloadToggle:SetValue(true) end)  -- Auto Reload/Refill
-            pcall(function() Toggles.AutoEscapeToggle:SetValue(true) end)  -- Auto Escape
-            pcall(function() Toggles.MultiHitToggle:SetValue(true) end)    -- Multi Hit ON
-            pcall(function() Options.MultiHitCountSlider:SetValue(3) end)  -- 3 titans
-
-            task.wait(0.3)
-
-            -- ==========================================
-            -- 6. SECURITY / FARM OPTIONS
-            -- ==========================================
-            pcall(function()
-                Options.FarmOptionsDropdown:SetValue({
-                    ["Auto Execute"] = true,
-                    ["Failsafe"] = true
-                })
-            end)
-
-            task.wait(0.3)
-
-            -- ==========================================
-            -- 7. EXTRAS
-            -- ==========================================
-            pcall(function() Toggles.AutoSkipToggle:SetValue(true) end)   -- Auto Skip Cutscenes
-            pcall(function() Toggles.AutoChestToggle:SetValue(true) end)  -- Auto Open Chests
-
-            task.wait(0.3)
-
-            -- ==========================================
-            -- 8. UPGRADES
-            -- ==========================================
-            pcall(function() Toggles.AutoUpgradeToggle:SetValue(true) end)    -- Upgrade Gears
-            pcall(function() Toggles.AutoSkillTree:SetValue(true) end)        -- Auto Skill Tree
-
-            task.wait(0.3)
-
-            -- ==========================================
-            -- 9. WAVES
-            -- ==========================================
-            pcall(function() Toggles.AutoWavesToggle:SetValue(true) end)  -- Auto Farm Waves
-
-            task.wait(0.5)
-
-            -- ==========================================
-            -- 10. AUTO HIDE GUI
-            -- ==========================================
-            pcall(function() Toggles.AutoHideToggle:SetValue(true) end)
-
-            task.wait(1)
-
-            -- ==========================================
-            -- 11. START AUTO START LAST
-            -- ==========================================
-            pcall(function() Toggles.AutoStartToggle:SetValue(true) end)
-
-            task.wait(0.5)
-
-            -- ==========================================
-            -- 12. SAVE CONFIG AS "KAITUN"
-            -- ==========================================
-            pcall(function()
-                SaveManager:SetLibrary(Library)
-                SaveManager:Save("KaitunConfig")
-            end)
-
-            task.wait(0.5)
-
-            -- ==========================================
-            -- 13. SET AS AUTOLOAD
-            -- ==========================================
-            pcall(function()
-                SaveManager:SetAutoloadConfig("KaitunConfig")
-            end)
-
-            task.wait(0.5)
-
-            Library:Notify({
-                Title = "✅ KAITUN MODE APPLIED!",
-                Description = "All settings ON | Config saved as 'KaitunConfig' | Will auto-load on next execute",
-                Time = 8
-            })
-
-            -- Auto hide GUI after 3 sec
-            task.wait(3)
-            pcall(function() Library:Toggle(false) end)
-        end)
-    end,
-    Tooltip = "One click = Full Kaitun setup + Save config + Autoload enabled"
-})
-
-ConfigsGroup:AddLabel("Click = Full auto setup\nSaves config + Auto loads next time", true)
-
 
 -- ==========================================
 -- UPGRADES TAB
@@ -4582,115 +4971,9 @@ MarketCratesOpenGroup:AddButton({
 
 MarketCratesOpenGroup:AddLabel("Auto open stops when inventory\nis empty. Buy more first!")
 
--- ==========================================
--- MARKET TAB : Progression (Shards & Keys)
--- ==========================================
 
-local progressionItems = {
-    [1] = "Colossal Shard",
-    [2] = "Female Shard",
-    [3] = "Armored Shard",
-    [4] = "Attack Shard",
-    [5] = "Emperor's Key",
-    [6] = "Memory Scroll"
-}
-
-local progressionIndexMap = {
-    ["Colossal Shard"] = 1,
-    ["Female Shard"] = 2,
-    ["Armored Shard"] = 3,
-    ["Attack Shard"] = 4,
-    ["Emperor's Key"] = 5,
-    ["Memory Scroll"] = 6
-}
-
-local progressionValues = {"Colossal Shard", "Female Shard", "Armored Shard", "Attack Shard", "Emperor's Key", "Memory Scroll"}
-
-
-MarketProgressionGroup:AddToggle("AutoBuyProgressionToggle", {
-    Text = "Auto Buy Progression Items",
-    Default = false,
-    Tooltip = "Continuously buys selected progression items from the market"
-})
-Toggles.AutoBuyProgressionToggle:OnChanged(function()
-    getgenv().AutoBuyProgression = Toggles.AutoBuyProgressionToggle.Value
-    if not getgenv().AutoBuyProgression then return end
-    task.spawn(function()
-        while getgenv().AutoBuyProgression do
-            local selected = Options.MarketProgressionSelectDropdown.Value or {}
-            local amount = Options.MarketProgressionAmountSlider.Value or 1
-            local boughtAny = false
-            for itemName, isActive in pairs(selected) do
-                if not isActive then continue end
-                local idx = progressionIndexMap[itemName]
-                if not idx then continue end
-                local ok, result = pcall(function()
-                    return getRemote:InvokeServer("S_Market", "Buy", "1_Progression", idx, amount)
-                end)
-                if ok and result ~= nil and result ~= false then
-                    boughtAny = true
-                    Library:Notify({ Title = "Progression", Description = "✅ Bought " .. amount .. "x " .. itemName, Time = 2 })
-                elseif ok and (result == nil or result == false) then
-                    Library:Notify({ Title = "Progression", Description = "❌ " .. itemName .. " – not enough coins!", Time = 2 })
-                end
-                task.wait(0.5)
-            end
-            task.wait(boughtAny and 30 or 5)
-        end
-    end)
-end)
-
-MarketProgressionGroup:AddDropdown("MarketProgressionSelectDropdown", {
-    Values = progressionValues,
-    Default = {},
-    Multi = true,
-    Text = "Select Items to Buy",
-    Tooltip = "Pick which progression items to auto-purchase"
-})
-
-MarketProgressionGroup:AddSlider("MarketProgressionAmountSlider", {
-    Text = "Amount",
-    Default = 1,
-    Min = 1,
-    Max = 99,
-    Rounding = 0,
-})
-
-MarketProgressionGroup:AddDivider()
-
-MarketProgressionGroup:AddButton({
-    Text = "Buy Selected Now",
-    Func = function()
-        task.spawn(function()
-            local selected = Options.MarketProgressionSelectDropdown.Value or {}
-            local amount = Options.MarketProgressionAmountSlider.Value or 1
-            local bought = 0
-            for itemName, isActive in pairs(selected) do
-                if not isActive then continue end
-                local idx = progressionIndexMap[itemName]
-                if not idx then continue end
-                local ok, result = pcall(function()
-                    return getRemote:InvokeServer("S_Market", "Buy", "1_Progression", idx, amount)
-                end)
-                if ok and result ~= nil and result ~= false then
-                    bought = bought + 1
-                    Library:Notify({ Title = "Progression", Description = "✅ Bought " .. amount .. "x " .. itemName, Time = 2 })
-                else
-                    Library:Notify({ Title = "Progression", Description = "❌ " .. itemName .. " failed!", Time = 2 })
-                end
-                task.wait(0.3)
-            end
-            if bought == 0 then
-                Library:Notify({ Title = "Progression", Description = "No items selected!", Time = 3 })
-            end
-        end)
-    end,
-    Tooltip = "Instantly buy selected progression items"
-})
-
-MarketProgressionGroup:AddLabel("Colossal Shard | Female Shard | Armored Shard\nAttack Shard | Emperor's Key | Memory Scroll")
-
-
+    
+ 
 -- ==========================================
 -- GLOBAL TAB : Slots
 -- ==========================================
@@ -5028,6 +5311,45 @@ end)
 
 CrashGroup:AddLabel("Detects stuck/crashed missions\nand auto returns to lobby")
 
+-- ==========================================
+-- AUTO REJOIN ON DISCONNECT
+-- ==========================================
+
+local lastPlaceId, lastJobId = game.PlaceId, game.JobId
+
+local function attemptReconnect()
+	pcall(function()
+		TeleportService:TeleportToPlaceInstance(lastPlaceId, lastJobId, lp)
+	end)
+	task.wait(3)
+	pcall(function()
+		TeleportService:Teleport(lastPlaceId, lp)
+	end)
+end
+
+TeleportService.TeleportInitFailed:Connect(function(player, teleportResult, errorMessage)
+	if not getgenv().AutoRejoinDisconnect then return end
+	if player ~= lp then return end
+	Library:Notify({
+		Title = "Auto Rejoin",
+		Description = "Teleport failed (" .. tostring(teleportResult) .. "). Retrying...",
+		Time = 4
+	})
+	task.wait(2)
+	attemptReconnect()
+end)
+
+CrashGroup:AddToggle("AutoRejoinDisconnectToggle", {
+	Text = "Auto Rejoin on Disconnect",
+	Default = false,
+	Tooltip = "Detects failed teleports/disconnects and attempts to rejoin the same server automatically"
+})
+Toggles.AutoRejoinDisconnectToggle:OnChanged(function()
+	getgenv().AutoRejoinDisconnect = Toggles.AutoRejoinDisconnectToggle.Value
+end)
+
+CrashGroup:AddLabel("Auto-reconnects if your teleport\nfails or you get disconnected\n(cannot recover after a hard kick)")
+
 task.spawn(function()
 	while not Library.Unloaded do
 		pcall(function()
@@ -5076,13 +5398,6 @@ ThemeManager:ApplyToTab(Tabs.Settings)
 ThemeManager:LoadDefault()
 SaveManager:LoadAutoloadConfig()
 
-
-
-Library:OnUnload(function()
-	setNoclip(false)
-	Library.Unloaded = true
-end)
-
 Library:OnUnload(function()
 	setNoclip(false)
 	Library.Unloaded = true
@@ -5095,44 +5410,12 @@ task.spawn(function()
 	end
 end)
 
--- ==========================================
--- ANTI-AFK (FIXED - Multi Method)
--- ==========================================
+-- Anti-AFK
 local virtualUser = game:GetService("VirtualUser")
-local vu = game:GetService("VirtualUser")
-local UserInputService = game:GetService("UserInputService")
-local VIM = game:GetService("VirtualInputManager")
-
--- Method 1: Idled event (best practice)
 lp.Idled:Connect(function()
-    pcall(function()
-        virtualUser:CaptureController()
-        virtualUser:ClickButton2(Vector2.new())
-    end)
-end)
-
--- Method 2: Periodic heartbeat (backup - har 60 sec)
-task.spawn(function()
-    while not Library.Unloaded do
-        task.wait(60)
-        pcall(function()
-            -- Random mouse click
-            VIM:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-            task.wait(0.05)
-            VIM:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-            
-            -- Chhota random key press (safe keys only)
-            local keys = {Enum.KeyCode.LeftShift, Enum.KeyCode.W, Enum.KeyCode.A, Enum.KeyCode.S, Enum.KeyCode.D}
-            local randomKey = keys[math.random(1, #keys)]
-            VIM:SendKeyEvent(true, randomKey, false, game)
-            task.wait(0.05)
-            VIM:SendKeyEvent(false, randomKey, false, game)
-            
-            -- VirtualUser fallback
-            vu:CaptureController()
-            vu:ClickButton2(Vector2.new())
-        end)
-    end
+	if getgenv().FunAntiAFKEnabled == false then return end
+	virtualUser:CaptureController()
+	virtualUser:ClickButton2(Vector2.new())
 end)
 
 -- Auto Hide Logic
@@ -5149,4 +5432,3 @@ task.spawn(function()
 	task.wait(1)
 	pcall(function() Library:SetFont(Enum.Font.Gotham) end)
 end)
-
