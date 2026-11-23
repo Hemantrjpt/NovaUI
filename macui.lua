@@ -5867,4 +5867,5 @@ addSlider(Settings, "UIScaleSlider", {
             lib:Notify({ Title = "Titanic Hub", Description = "Auto Hid GUI", Time = 2 })
         end
     end)
+
 end
